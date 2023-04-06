@@ -6,14 +6,15 @@ const gallery = document.querySelector('.gallery');
 const button = document.querySelector('.load-more');
 const apiKey = '35073531-a3301b6130ef0984d8d454ab2';
 let per_page = 40;
+let currentPage = 1;
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const searchQuery = event.target.elements.searchQuery.value.trim();
-  let currentPage = 1;
+  currentPage = 1;
 
   try {
-    const url = `https://pixabay.com/api/?key=${apiKey}&q=${searchQuery}&image_type=photo&per_page=40&page=${currentPage}`;
+    const url = `https://pixabay.com/api/?key=${apiKey}&q=${searchQuery}&image_type=photo&per_page=${per_page}&page=${currentPage}`;
     const response = await axios.get(url);
     const images = response.data.hits;
     const cards = images.map((image) => createCard(image));
@@ -25,34 +26,44 @@ form.addEventListener('submit', async (event) => {
       Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.'); 
       button.classList.add('hidden'); 
     } else {
-      button.classList.remove('hidden'); 
+      button.classList.remove('hidden');
     }
-
-    button.addEventListener('click', async () => {
-      currentPage++;
-      const url = `https://pixabay.com/api/?key=${apiKey}&q=${searchQuery}&image_type=photo&per_page=40&page=${currentPage}`;
-      const response = await axios.get(url);
-      const images = response.data.hits;
-      const cards = images.map((image) => createCard(image));
-
-      gallery.append(...cards);
-
-      if (response.data.totalHits <= currentPage * per_page) {    
-        button.classList.add('hidden'); 
-      }
-
-      const { height: cardHeight } = document.querySelector('.gallery').firstElementChild.getBoundingClientRect();
-
-      window.scrollBy({
-        top: cardHeight * 2,
-        behavior: 'smooth',
-      });
-    });
   } catch (error) {
     Notiflix.Notify.failure('Oops, something went wrong!');
+    button.classList.add('hidden'); 
   }
 });
 
+button.addEventListener('click', async () => {
+  currentPage++;
+  const searchQuery = document.querySelector('#search-form input[name=searchQuery]').value.trim();
+
+  try {
+    const url = `https://pixabay.com/api/?key=${apiKey}&q=${searchQuery}&image_type=photo&per_page=${per_page}&page=${currentPage}`;
+    const response = await axios.get(url);
+    const images = response.data.hits;
+    const cards = images.map((image) => createCard(image));
+
+    gallery.append(...cards);
+
+    if (images.length === 0) {
+      Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.");
+      button.classList.add('hidden');
+    } else {
+      button.classList.remove('hidden');
+    }
+
+    const { height: cardHeight } = document.querySelector('.gallery').firstElementChild.getBoundingClientRect();
+
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
+  } catch (error) {
+    Notiflix.Notify.failure('Oops, something went wrong!');
+    button.classList.add('hidden');
+  }
+});
 
 function createCard(image) {
   const card = document.createElement('div');
@@ -87,22 +98,4 @@ function createInfoItem(label, value) {
   item.append(bold, `: ${value}`);
   
   return item;
-}
-
-window.onload = function() {
-  loadMoreOnClick();
-};
-
-function loadMoreOnClick() {
-  const itemsToLoad = getItemsToLoad();
-
-  appendItems(itemsToLoad);
-
-  const loadMoreButton = document.getElementById('load-more');
-  if (itemsToLoad.length < itemsPerPage && !loadMoreButton.classList.contains('hidden')) {
-    loadMoreButton.classList.add('hidden');
-  } else if (itemsToLoad.length === itemsPerPage && loadMoreButton.classList.contains('hidden')) {
-    loadMoreButton.classList.remove('hidden');
-    Notiflix.Notify.warning("We're sorry, but you've reached the end of search results."); 
-  }
 }
