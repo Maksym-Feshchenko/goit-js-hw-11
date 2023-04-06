@@ -23,8 +23,9 @@ form.addEventListener('submit', async (event) => {
 
     if (images.length === 0) {
       Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.'); 
+      button.classList.add('hidden'); 
     } else {
-       button.classList.remove('hidden'); 
+      button.classList.remove('hidden'); 
     }
 
     button.addEventListener('click', async () => {
@@ -36,14 +37,8 @@ form.addEventListener('submit', async (event) => {
 
       gallery.append(...cards);
 
-      gallery.innerHTML = '';
-    gallery.append(...cards);
-    if ((currentPage - 1) * per_page >= images.totalHits) {    
-    Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');    
-    button.style.display = 'none';}
-
-      else if (images.length < 40) {
-        button.classList.add('hidden');
+      if (response.data.totalHits <= currentPage * per_page) {    
+        button.classList.add('hidden'); 
       }
 
       const { height: cardHeight } = document.querySelector('.gallery').firstElementChild.getBoundingClientRect();
@@ -92,4 +87,22 @@ function createInfoItem(label, value) {
   item.append(bold, `: ${value}`);
   
   return item;
+}
+
+window.onload = function() {
+  loadMoreOnClick();
+};
+
+function loadMoreOnClick() {
+  const itemsToLoad = getItemsToLoad();
+
+  appendItems(itemsToLoad);
+
+  const loadMoreButton = document.getElementById('load-more');
+  if (itemsToLoad.length < itemsPerPage && !loadMoreButton.classList.contains('hidden')) {
+    loadMoreButton.classList.add('hidden');
+  } else if (itemsToLoad.length === itemsPerPage && loadMoreButton.classList.contains('hidden')) {
+    loadMoreButton.classList.remove('hidden');
+    Notiflix.Notify.warning("We're sorry, but you've reached the end of search results."); 
+  }
 }
